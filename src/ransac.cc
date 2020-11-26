@@ -68,28 +68,26 @@ void Ransac::Solve(double dist_thres, double Nminpoints, int Nintera)
     fRANSACMinPoints = Nminpoints;
     fRANSACMaxIteration = Nintera;
 
-  	double RemainingCharge = fTotalCharge;
+  //std::cout << "numero de puntos  "<<vX.size()<< '\n';
+  std::vector<int> remainIndex;
+  for (size_t i = 0; i < vX.size(); i++)
+    remainIndex.push_back(i);
 
-    std::vector<int> remainIndex;
-    for (size_t i = 0; i < vX.size(); i++)
-      remainIndex.push_back(i);
-
-    TVector3 V1, V2;
-    std::vector< int> inliners;
-    inliners.clear();
-    std::vector< std::pair <double,int> >  IdxMod1;
-    std::vector< std::pair <double,int> > IdxMod2;
-
+  TVector3 V1, V2;
+  std::vector< int> inliners;
+  inliners.clear();
+  std::vector< std::pair <double,int> >  IdxMod1;
+  std::vector< std::pair <double,int> > IdxMod2;
 
 
 
-    for(int i=0;i<fRANSACMaxIteration;i++){
+
+  for(int i=0;i<fRANSACMaxIteration;i++){
 
 
     if(remainIndex.size()<fRANSACMinPoints) break;
 
     std::vector< int> Rsamples = RandSam(remainIndex,fRandSamplMode);  //random sampling
-    //std::vector< int> Rsamples = RandSam(remainIndex);  //random sampling
     EstimModel(Rsamples); //estimate the linear model
 
 
@@ -171,6 +169,7 @@ void Ransac::Solve(double dist_thres, double Nminpoints, int Nintera)
   IdxMod2.clear();
   remainIndex.clear();
 
+
 }
 
 vector<double> Ransac::GetPDF(const std::vector<int>  samplesIdx){
@@ -236,8 +235,11 @@ vector<int> Ransac::RandSam(vector<int> indX, Int_t mode)
   if(mode==2){
     //-------Weighted sampling
     bool cond = false;
+    int counter = 0;
     p1=(int)(gRandom->Uniform(0,pclouds));
     do{
+      counter++;
+      if(counter>30 && p2!=p1) break;
       p2=(int)(gRandom->Uniform(0,pclouds));
       cond = false;
       double TwiceAvCharge = 2*GetAvCharge();

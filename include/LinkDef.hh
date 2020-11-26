@@ -5,7 +5,4 @@
 #pragma link C++ class Ransac+;
 #pragma link C++ class Mlesac+;
 #pragma link C++ class LMedS+;
-#pragma link C++ class Track+;
-#pragma link C++ class Hit+;
-#pragma link C++ class Event+;
 #endif

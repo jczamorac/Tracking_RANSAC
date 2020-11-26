@@ -17,6 +17,7 @@ Mlesac::Mlesac() {
   fMlesacMaxIteration = 500;
 	fMlesacMinPoints = 30;
 	fMlesacThreshold = 15;
+  fRandSamplMode = 0;
 }
 
 Mlesac::~Mlesac() {
@@ -89,7 +90,7 @@ void Mlesac::Solve(double dist_thres, double Nminpoints, int Nintera)
 
         if(remainIndex.size()<fMlesacMinPoints) break;
 
-        std::vector< int> Rsamples = RandSam(remainIndex);
+        std::vector< int> Rsamples = RandSam(remainIndex,fRandSamplMode);  //random sampling
         EstimModel(Rsamples);
 
         // Calculate squared errors
@@ -232,101 +233,110 @@ vector<double> Mlesac::GetPDF(const std::vector<int>  samplesIdx){
   return w;
 }
 
-vector<int> Mlesac::RandSam(vector<int> indX)
+vector<int> Mlesac::RandSam(vector<int> indX, Int_t mode)
 {
   size_t pclouds = indX.size();
   std::vector<double> Proba = GetPDF(indX);
   int p1,p2;
   double w1,w2;
-  /*
-  //-------Uniform sampling
-  p1=(int)(Rand->Uniform(0,pclouds));
+  vector<int> ranpair;
+  ranpair.resize(2);
 
-	 do{
-      p2=(int)(Rand->Uniform(0,pclouds));
-    } while(p2==p1);
+  if(mode==0){
+    //-------Uniform sampling
+    p1=(int)(gRandom->Uniform(0,pclouds));
 
-  vector<int> ranpair{indX[p1],indX[p2]};
-    */
+     do{
+       p2=(int)(gRandom->Uniform(0,pclouds));
+     } while(p2==p1);
 
-    /*
+     ranpair[0] = indX[p1];
+     ranpair[1] = indX[p2];
+  }
+
+  if(mode==1){
   //--------Gaussian sampling
-  double dist = 0;
-  double sigma = 2.0;
-  double y = 0;
-  double gauss = 0;
-  p1=(int)(Rand->Uniform(0,pclouds));
-  TVector3 P1 ={vX[indX[p1]],vY[indX[p1]],vZ[indX[p1]]};
-	 do{
-      p2=(int)(Rand->Uniform(0,pclouds));
+    double dist = 0;
+    double sigma = 30.0;
+    double y = 0;
+    double gauss = 0;
+    int counter = 0;
+    p1=(int)(gRandom->Uniform(0,pclouds));
+    TVector3 P1 ={vX[indX[p1]],vY[indX[p1]],vZ[indX[p1]]};
+    do{
+      p2=(int)(gRandom->Uniform(0,pclouds));
       TVector3 P2 ={vX[indX[p2]],vY[indX[p2]],vZ[indX[p2]]};
       TVector3 dif = P2-P1;
       dist = dif.Mag();
-      gauss = 1.0*exp(-1*pow(dist/sigma,2.0));
-      y = (Rand->Uniform(0,1));
-    } while(p2==p1 || y>gauss);
+      gauss = 1.0*exp(-1.0*pow(dist/sigma,2.0));
+      y = (gRandom->Uniform(0,1));
+      counter++;
+      if(counter>20 && p2!=p1) break;
+      } while(p2==p1 || y>gauss);
 
-  vector<int> ranpair{indX[p1],indX[p2]};
-    */
+      ranpair[0] = indX[p1];
+      ranpair[1] = indX[p2];
+  }
 
-  //-------Weighted sampling
-  bool cond = false;
-  p1=(int)(Rand->Uniform(0,pclouds));
-   do{
-      p2=(int)(Rand->Uniform(0,pclouds));
+  if(mode==2){
+    //-------Weighted sampling
+    bool cond = false;
+    int counter = 0;
+    p1=(int)(gRandom->Uniform(0,pclouds));
+    do{
+      counter++;
+      if(counter>30 && p2!=p1) break;
+      p2=(int)(gRandom->Uniform(0,pclouds));
       cond = false;
       double TwiceAvCharge = 2*GetAvCharge();
       if(Proba.size()==pclouds){
-        //w1 = Rand->Uniform(0,TwiceAvCharge);
-        w2 = Rand->Uniform(0,TwiceAvCharge);
-        //if(Proba[p1]>=w1 && Proba[p2]>=w2) cond = true;
+        w2 = gRandom->Uniform(0,TwiceAvCharge);
         if(Proba[p2]>=w2) cond = true;
       }else{
-        w1 = 1;
         w2 = 1;
         cond = true;
       }
-
     } while(p2==p1 || cond==false);
 
-  vector<int> ranpair{indX[p1],indX[p2]};
+    ranpair[0] = indX[p1];
+    ranpair[1] = indX[p2];
+  }
 
-
-  /*
-  //-------Weighted sampling + Gauss dist.
-  bool cond = false;
-  double dist = 0;
-  double sigma = 2.0;
-  double y = 0;
-  double gauss = 0;
-  p1=(int)(Rand->Uniform(0,pclouds));
-  TVector3 P1 ={vX[indX[p1]],vY[indX[p1]],vZ[indX[p1]]};
-  do{
-      p2=(int)(Rand->Uniform(0,pclouds));
+  if(mode==3){
+    //-------Weighted sampling + Gauss dist.
+    bool cond = false;
+    double dist = 0;
+    double sigma = 30.0;
+    double y = 0;
+    double gauss = 0;
+    int counter = 0;
+    p1=(int)(gRandom->Uniform(0,pclouds));
+    TVector3 P1 ={vX[indX[p1]],vY[indX[p1]],vZ[indX[p1]]};
+    do{
+      p2=(int)(gRandom->Uniform(0,pclouds));
       TVector3 P2 ={vX[indX[p2]],vY[indX[p2]],vZ[indX[p2]]};
       TVector3 dif = P2-P1;
       dist = dif.Mag();
-      gauss = 1.0*exp(-1*pow(dist/sigma,2));
-      y = (Rand->Uniform(0,1));
+      gauss = 1.0*exp(-1.0*pow(dist/sigma,2));
+      y = (gRandom->Uniform(0,1));
+      counter++;
+      if(counter>30 && p2!=p1) break;
 
       cond = false;
       double TwiceAvCharge = 2*GetAvCharge();
       if(Proba.size()==pclouds){
-        //w1 = Rand->Uniform(0,TwiceAvCharge);
-        w2 = Rand->Uniform(0,TwiceAvCharge);
-        //if(Proba[p1]>=w1 && Proba[p2]>=w2) cond = true;
+        w2 = gRandom->Uniform(0,TwiceAvCharge);
         if(Proba[p2]>=w2) cond = true;
-      }else{
-        w1 = 1;
+        }else{
         w2 = 1;
         cond = true;
       }
 
     } while(p2==p1 || cond==false || y>gauss);
 
-  vector<int> ranpair{indX[p1],indX[p2]};
-
-  */
+    ranpair[0] = indX[p1];
+    ranpair[1] = indX[p2];
+  }
 
   return ranpair;
 

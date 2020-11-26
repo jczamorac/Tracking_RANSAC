@@ -17,6 +17,7 @@ LMedS::LMedS() {
   fLMedSMaxIteration = 500;
 	fLMedSMinPoints = 30;
 	fLMedSThreshold = 15;
+  fRandSamplMode = 0;
 }
 
 LMedS::~LMedS() {
@@ -68,73 +69,61 @@ void LMedS::Solve(double dist_thres, double Nminpoints, int Nintera)
     fLMedSMinPoints = Nminpoints;
     fLMedSMaxIteration = Nintera;
 
-  	double RemainingCharge = fTotalCharge;
-
+      //std::cout << "numero de puntos  "<<vX.size()<< '\n';
     std::vector<int> remainIndex;
     for (size_t i = 0; i < vX.size(); i++)
     remainIndex.push_back(i);
 
-
+  	TVector3 V1, V2;
+  	std::vector< int> inliners;
+    inliners.clear();
     std::vector< std::pair <double,int> >  IdxMod1;
     std::vector< std::pair <double,int> > IdxMod2;
 
-
-  	  TVector3 V1, V2;
-  	  std::vector< int> inliners;
-  		inliners.clear();
 
 
 
   	  for(int i=0;i<fLMedSMaxIteration;i++){
 
-        if(remainIndex.size()<fOriginalCloudSize*0.1) break;
 
-        std::vector< int> Rsamples = RandSam(remainIndex);
-        EstimModel(Rsamples);
+        if(remainIndex.size()<fLMedSMinPoints) break;
+
+        std::vector< int> Rsamples = RandSam(remainIndex,fRandSamplMode);  //random sampling
+        EstimModel(Rsamples); //estimate the linear model
 
 
-        std::vector<int> inlIdxR;
+        //std::vector<int> inlIdxR;
         int nbInliers = 0;
-
 
         for (auto j = remainIndex.begin(); j != remainIndex.end(); ++j){
 
-  	      double error = EstimError(*j);
+  	      double error = EstimError(*j); //error of each point relative to the model
           error = error*error;
-          errorsVec.push_back(error);
+
   	      if(error<(fLMedSThreshold*fLMedSThreshold)){
-  	        	inlIdxR.push_back(*j);
+  	        	//inlIdxR.push_back(*j);
               nbInliers++;
+              errorsVec.push_back(error);
   	        	}
+  		     }
 
-  		}
-
-      double med = GetMedian(errorsVec);
-      errorsVec.clear();
+         double med = GetMedian(errorsVec);
+         errorsVec.clear();
 
 
   	    if(nbInliers>fLMedSMinPoints){
+          //getting the best models
           double scale = med/nbInliers;
-
           IdxMod1.push_back( std::make_pair(scale, Rsamples[0]) );
           IdxMod2.push_back( std::make_pair(scale, Rsamples[1]) );
+  			} //if a cluster was found
 
-          std::vector<int> tempRemain;
-          std::set_difference(remainIndex.begin(), remainIndex.end(), inlIdxR.begin(), inlIdxR.end(),
-          std::inserter(tempRemain, tempRemain.begin()));
-          remainIndex = tempRemain;
-          inlIdxR.clear();
-          tempRemain.clear();
-
-  			}
-
-  		}//for LMedS interactions
+  		}//for Lmeds interactions
 
 
       //sort clusters
       sort(IdxMod1.begin(), IdxMod1.end());
       sort(IdxMod2.begin(), IdxMod2.end());
-
 
       remainIndex.clear(); // track remaining points
       for (size_t i = 0; i < vX.size(); i++)
@@ -148,7 +137,7 @@ void LMedS::Solve(double dist_thres, double Nminpoints, int Nintera)
         std::vector<int> inlIdxR;
         ModInx.clear();
 
-        if(remainIndex.size()<fOriginalCloudSize*0.1) break;
+        if(remainIndex.size()<fLMedSMinPoints) break;
 
         int counter = 0;
 
@@ -156,7 +145,7 @@ void LMedS::Solve(double dist_thres, double Nminpoints, int Nintera)
         {
             double error = EstimError(*j);
 
-            if(error*error<(fLMedSThreshold*fLMedSThreshold))
+            if((error*error)<(fLMedSThreshold*fLMedSThreshold))
             {
               inlIdxR.push_back(*j);
               counter++;
@@ -200,102 +189,110 @@ vector<double> LMedS::GetPDF(const std::vector<int>  samplesIdx){
   return w;
 }
 
-vector<int> LMedS::RandSam(vector<int> indX)
+vector<int> LMedS::RandSam(vector<int> indX, Int_t mode)
 {
   size_t pclouds = indX.size();
   std::vector<double> Proba = GetPDF(indX);
   int p1,p2;
   double w1,w2;
-  /*
-  //-------Uniform sampling
-  p1=(int)(Rand->Uniform(0,pclouds));
+  vector<int> ranpair;
+  ranpair.resize(2);
 
-	 do{
-      p2=(int)(Rand->Uniform(0,pclouds));
-    } while(p2==p1);
+  if(mode==0){
+    //-------Uniform sampling
+    p1=(int)(gRandom->Uniform(0,pclouds));
 
-  vector<int> ranpair{indX[p1],indX[p2]};
-  */
+     do{
+       p2=(int)(gRandom->Uniform(0,pclouds));
+     } while(p2==p1);
 
-  /*
+     ranpair[0] = indX[p1];
+     ranpair[1] = indX[p2];
+  }
+
+  if(mode==1){
   //--------Gaussian sampling
-  double dist = 0;
-  double sigma = 2.0;
-  double y = 0;
-  double gauss = 0;
-  p1=(int)(Rand->Uniform(0,pclouds));
-  TVector3 P1 ={vX[indX[p1]],vY[indX[p1]],vZ[indX[p1]]};
-	 do{
-      p2=(int)(Rand->Uniform(0,pclouds));
+    double dist = 0;
+    double sigma = 30.0;
+    double y = 0;
+    double gauss = 0;
+    int counter = 0;
+    p1=(int)(gRandom->Uniform(0,pclouds));
+    TVector3 P1 ={vX[indX[p1]],vY[indX[p1]],vZ[indX[p1]]};
+    do{
+      p2=(int)(gRandom->Uniform(0,pclouds));
       TVector3 P2 ={vX[indX[p2]],vY[indX[p2]],vZ[indX[p2]]};
       TVector3 dif = P2-P1;
       dist = dif.Mag();
-      gauss = 1.0*exp(-1*pow(dist/sigma,2.0));
-      y = (Rand->Uniform(0,1));
-    } while(p2==p1 || y>gauss);
+      gauss = 1.0*exp(-1.0*pow(dist/sigma,2.0));
+      y = (gRandom->Uniform(0,1));
+      counter++;
+      if(counter>20 && p2!=p1) break;
+      } while(p2==p1 || y>gauss);
 
-  vector<int> ranpair{indX[p1],indX[p2]};
-  */
+      ranpair[0] = indX[p1];
+      ranpair[1] = indX[p2];
+  }
 
-  /*
-  //-------Weighted sampling
-  bool cond = false;
-  p1=(int)(Rand->Uniform(0,pclouds));
-   do{
-      p2=(int)(Rand->Uniform(0,pclouds));
+  if(mode==2){
+    //-------Weighted sampling
+    bool cond = false;
+    int counter = 0;
+    p1=(int)(gRandom->Uniform(0,pclouds));
+    do{
+      counter++;
+      if(counter>30 && p2!=p1) break;
+      p2=(int)(gRandom->Uniform(0,pclouds));
       cond = false;
       double TwiceAvCharge = 2*GetAvCharge();
       if(Proba.size()==pclouds){
-        //w1 = Rand->Uniform(0,TwiceAvCharge);
-        w2 = Rand->Uniform(0,TwiceAvCharge);
-        //if(Proba[p1]>=w1 && Proba[p2]>=w2) cond = true;
+        w2 = gRandom->Uniform(0,TwiceAvCharge);
         if(Proba[p2]>=w2) cond = true;
       }else{
-        w1 = 1;
         w2 = 1;
         cond = true;
       }
-
     } while(p2==p1 || cond==false);
 
-  vector<int> ranpair{indX[p1],indX[p2]};
-  */
+    ranpair[0] = indX[p1];
+    ranpair[1] = indX[p2];
+  }
 
-
-  //-------Weighted sampling + Gauss dist.
-  bool cond = false;
-  double dist = 0;
-  double sigma = 2.0;
-  double y = 0;
-  double gauss = 0;
-  p1=(int)(Rand->Uniform(0,pclouds));
-  TVector3 P1 ={vX[indX[p1]],vY[indX[p1]],vZ[indX[p1]]};
-  do{
-      p2=(int)(Rand->Uniform(0,pclouds));
+  if(mode==3){
+    //-------Weighted sampling + Gauss dist.
+    bool cond = false;
+    double dist = 0;
+    double sigma = 30.0;
+    double y = 0;
+    double gauss = 0;
+    int counter = 0;
+    p1=(int)(gRandom->Uniform(0,pclouds));
+    TVector3 P1 ={vX[indX[p1]],vY[indX[p1]],vZ[indX[p1]]};
+    do{
+      p2=(int)(gRandom->Uniform(0,pclouds));
       TVector3 P2 ={vX[indX[p2]],vY[indX[p2]],vZ[indX[p2]]};
       TVector3 dif = P2-P1;
       dist = dif.Mag();
-      gauss = 1.0*exp(-1*pow(dist/sigma,2));
-      y = (Rand->Uniform(0,1));
+      gauss = 1.0*exp(-1.0*pow(dist/sigma,2));
+      y = (gRandom->Uniform(0,1));
+      counter++;
+      if(counter>30 && p2!=p1) break;
 
       cond = false;
       double TwiceAvCharge = 2*GetAvCharge();
       if(Proba.size()==pclouds){
-        //w1 = Rand->Uniform(0,TwiceAvCharge);
-        w2 = Rand->Uniform(0,TwiceAvCharge);
-        //if(Proba[p1]>=w1 && Proba[p2]>=w2) cond = true;
+        w2 = gRandom->Uniform(0,TwiceAvCharge);
         if(Proba[p2]>=w2) cond = true;
-      }else{
-        w1 = 1;
+        }else{
         w2 = 1;
         cond = true;
       }
 
     } while(p2==p1 || cond==false || y>gauss);
 
-  vector<int> ranpair{indX[p1],indX[p2]};
-
-
+    ranpair[0] = indX[p1];
+    ranpair[1] = indX[p2];
+  }
 
   return ranpair;
 

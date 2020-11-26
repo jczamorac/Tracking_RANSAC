@@ -55,15 +55,15 @@ function(ROOT_GENERATE_DICTIONARY dictionary)
   ## find and call ROOTCLING
   find_program(ROOTCLING rootcling)
   add_custom_command(
-    OUTPUT ${dictionary}.cxx ${dictionary}_rdict.pcm 
-    COMMAND ${ROOTCLING} -f ${dictionary}.cxx -s ${dictionary}.pcm 
+    OUTPUT ${dictionary}.cxx ${dictionary}_rdict.pcm
+    COMMAND ${ROOTCLING} -f ${dictionary}.cxx -s ${dictionary}.pcm
     ${ARG_OPTIONS} ${ARG_UNPARSED_ARGUMENTS} ${extra_includes} ${ARG_LINKDEF}
     DEPENDS ${includes} ${linkdefs})
 endfunction()
 
 
 # - Configure output Modules
-# 
+#
 set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
 
 #set(HDRFILES include/*.h)
@@ -71,8 +71,6 @@ set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
 
 file(GLOB SRCFILES ${PROJECT_SOURCE_DIR}/src/*.cc)
 file(GLOB HDRFILES ${PROJECT_SOURCE_DIR}/include/*.h)
-#file(GLOB SRCFILES ${PROJECT_SOURCE_DIR}/src/test.cc LineFitting3D.cc)
-#file(GLOB HDRFILES ${PROJECT_SOURCE_DIR}/include/LineFitting3D.h robust_estim.h test.h)
 
 
 
@@ -80,10 +78,5 @@ ROOT_GENERATE_DICTIONARY(Trackinglib_Dict ${HDRFILES} LINKDEF include/LinkDef.hh
 add_library(Trackinglib SHARED ${HDRFILES} ${SRCFILES} Trackinglib_Dict.cxx)
 
 
-#target_link_libraries(TeBATlib ${ROOT_LIBRARIES} ${FFTW_LIBRARIES} Html Spectrum XMLIO GRU MultiFrame)
+
 target_link_libraries(Trackinglib ${ROOT_LIBRARIES} ${FFTW_LIBRARIES} Html Spectrum XMLIO)
-
-
-
-
-

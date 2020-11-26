@@ -33,7 +33,7 @@ class LMedS
   void Reset();
 	void Init(vector<double> v1, vector<double> v2, vector<double> v3, vector<double> v4);
 	void Solve(double dist_thres, double Nminpoints, int Nintera);
-  vector<int> RandSam(vector<int> indX);
+  vector<int> RandSam(vector<int> indX, Int_t mode);
   void EstimModel(const std::vector<int>  samplesIdx);
   double EstimError(int i);
 	vector<double> GetChargeOfTracks();
@@ -85,6 +85,7 @@ class LMedS
 	int fNumberOfPadsY;
 	int fVerbose;
   double Avcharge;
+  int fRandSamplMode;
 
 
   public:
