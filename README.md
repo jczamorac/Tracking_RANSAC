@@ -1,7 +1,7 @@
 # Tracking Algorithms for TPCs using Consensus-Based Robust Estimators
 ```
 J. C. Zamora and G. F. Fortino
-Nucl. Instr. Meth. A , 164899 (2020)
+Nucl. Instr. Meth. A 988, 164899 (2021)
 https://doi.org/10.1016/j.nima.2020.164899
 ```
 
