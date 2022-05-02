@@ -6,7 +6,7 @@
 #include "ransac.h"
 #include "mlesac.h"
 #include "lmeds.h"
-
+#include "ransac_2Dcircle.h"
 using namespace std;
 
 
@@ -71,11 +71,11 @@ int main(int argc, const char* argv[])
 
 
 			// ***** Part 2: Solve.
-			Ransac *myransac = new Ransac();
+			/*Ransac *myransac = new Ransac();
 			myransac->Init(vx,vy,vz,vq);
 			myransac->Solve(10.0,10,500);
 			Ransac::AllClusters myClusters = myransac->GetClusters();
-
+			*/
 			/*
 			Mlesac *mymlesac = new Mlesac();
 			mymlesac->Init(vx,vy,vz,vq);
@@ -87,6 +87,11 @@ int main(int argc, const char* argv[])
 			mylmeds->Solve(10.0,10,500);
 			LMedS::AllClusters myClusters = mylmeds->GetClusters();
 			*/
+			Ransac_circle *myransac = new Ransac_circle();
+			myransac->Init(vx,vy,vz,vq);
+			myransac->Solve(7.0,50,2500);
+			Ransac_circle::AllClusters myClusters = myransac->GetClusters();
+
 
 			// ***** Part 3: Get the clusters
     	int Nclusters = myClusters.size();
@@ -99,7 +104,7 @@ int main(int argc, const char* argv[])
       	double Chi2 = myClusters[i].ClusterChi2;
       	TVector3 punto1 = myClusters[i].ClusterFitP1;
       	TVector3 punto2 = myClusters[i].ClusterFitP2;
-      	std::cout << i<<"  "<<punto1.X()<<" "<<punto1.Y()<<"  "<<punto1.Z()<< '\n';
+      	std::cout << i<<"  "<<punto1.X()<<" "<<punto1.Y()<<"  "<<punto1.Z()<<"  "<<clustersize<< '\n';
       	std::cout << i<<"  "<<punto2.X()<<" "<<punto2.Y()<<"  "<<punto2.Z()<< '\n';
       	for(int j =0; j<clustersize; j++){
         	ofile<<vx[indicesCluster[j]]<<"  "<<vy[indicesCluster[j]]<<"  "<<vz[indicesCluster[j]]<<"  "<<i<<"  "<<costo<<"  "<<Chi2<<std::endl;

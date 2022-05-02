@@ -1,10 +1,10 @@
 //////////////////////////////////////////////////////////
-// LMedS Class
-// J.C. Zamora, cardona@if.usp.br
-// University of Sao Paulo, 2020
+// RANSAC 2D circle Class
+// J.C. Zamora, zamora@nscl.msu.edu
+// FRIB, 2022
 //////////////////////////////////////////////////////////
-#ifndef LMedS_H
-#define LMedS_H
+#ifndef Ransac_circle_H
+#define Ransac_circle_H
 
 // ROOT Headers
 #include <TObject.h>
@@ -24,11 +24,11 @@ using namespace std;
 
 
 
-class LMedS
+class Ransac_circle
 {
   public:
-  LMedS();
-  ~LMedS();
+  Ransac_circle();
+  ~Ransac_circle();
 
   void Reset();
 	void Init(vector<double> v1, vector<double> v2, vector<double> v3, vector<double> v4);
@@ -41,11 +41,9 @@ class LMedS
   vector<double> GetPDF(const std::vector<int>  samplesIdx);
   void SetAvCharge(double charge){Avcharge = charge;};
   double GetAvCharge(){return Avcharge;};
-	double Fit3D(vector<int> inliners, TVector3& V1, TVector3& V2);
-  double GetMedian(vector<double> errvec);
+	double Fit2DCircle(vector<int> inliners, TVector3& V1);
   TRandom* Rand;
-  TVector3 Vs;
-  TVector3 Ps;
+  TVector3 Mcir;
 
 
   //-----get a cluster (maybe a track class?)
@@ -71,13 +69,12 @@ class LMedS
 
   private:
   vector<double> vX, vY, vZ, vQ;
-  vector<double> errorsVec;
 	vector<double> vTrackCharge;
-  float fLMedSMinPoints;
-	float fLMedSPointThreshold;
-	float fLMedSChargeThreshold;
-	float fLMedSThreshold;
-	float fLMedSMaxIteration;
+  float fRANSACMinPoints;
+	float fRANSACPointThreshold;
+	float fRANSACChargeThreshold;
+	float fRANSACThreshold;
+	float fRANSACMaxIteration;
 	int fNumberOfTracksMax;
 	int fOriginalCloudSize;
 	double fTotalCharge;
@@ -89,7 +86,7 @@ class LMedS
 
 
   public:
-  ClassDef(LMedS,0)
+  ClassDef(Ransac_circle,0)
 };
 
 #endif

@@ -28,7 +28,7 @@ set(CMAKE_MODULE_PATH
     ${CMAKE_MODULE_PATH})
 list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_definitions( -DTIXML_USE_STL )
 
@@ -40,7 +40,7 @@ link_directories(${CMAKE_SOURCE_DIR}/lib)
 #
 list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
 find_package(ROOT REQUIRED COMPONENTS RIO)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ROOT_CXX_FLAGS} -std=c++11 -pthread -Wno-deprecated-declarations")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ROOT_CXX_FLAGS} -std=c++14 -pthread -Wno-deprecated-declarations")
 set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -lncurses" )
 include_directories(${ROOT_INCLUDE_DIR} ${CMAKE_SOURCE_DIR})
 link_directories(${ROOT_LIBRARY_DIR})
